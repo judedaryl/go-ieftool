@@ -104,7 +104,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ieftool-windows-amd64/ieftool-windows-amd64
-            ieftool-linux-amd64/ieftool-linux-amd64
-            ieftool-darwin-amd64/ieftool-darwin-amd64
-            ieftool-darwin-arm64/ieftool-darwin-arm64
+            ieftool-windows-amd64
+            ieftool-linux-amd64
+            ieftool-darwin-amd64
+            ieftool-darwin-arm64
