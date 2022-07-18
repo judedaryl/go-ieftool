@@ -28,7 +28,9 @@ else
     echoerr "unsupported arch: $ARCH"
     exit 1
 fi
-
+echo DETECTED OS $OS
+echo DETECTED ARCH $ARCH
+echo VERSION $VER
 DOWNLOAD_URL=https://github.com/judedaryl/go-ieftool/releases/download/$VER/ieftool-$OS-$ARCH
 
 echo "Installing ieftool from $DOWNLOAD_URL"
@@ -38,6 +40,9 @@ curl -sL "$DOWNLOAD_URL" -o ieftool
 else
 wget -O- "$DOWNLOAD_URL"
 fi
+chmod +x ieftool
 
-echo $ARCH
-echo $OS
+rm -f $(command -v ieftool) || true
+rm -f /usr/local/bin/ieftool
+mv ieftool /usr/local/bin/ieftool
+
