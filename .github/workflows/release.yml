@@ -74,10 +74,10 @@ jobs:
 
       - name: Build
         run: |
-          GOOS=darwin GOARCH=arm go build -o ieftool
+          GOOS=darwin GOARCH=arm64 go build -o ieftool
       - uses: actions/upload-artifact@v2
         with:
-          name: ieftool-darwin-arm
+          name: ieftool-darwin-arm64
           path: ieftool
 
   release:
