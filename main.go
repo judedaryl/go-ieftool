@@ -55,7 +55,7 @@ func UploadPolicies(token string, policies []internal.Policy) {
 	wg.Add(len(policies))
 
 	for _, p := range policies {
-		uploadPolicy(token, p, &wg)
+		go uploadPolicy(token, p, &wg)
 	}
 	wg.Wait()
 }

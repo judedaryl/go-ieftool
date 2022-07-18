@@ -1,9 +1,11 @@
 if [[ $1 == "" ]]
 then
-    VER=v1.0.0
+    VER=$(curl https://api.github.com/repos/judedaryl/go-ieftool/releases/latest | grep "tag_name" | awk '{print $2}' | sed 's|[\"\,]*||g')
 else
     VER=v$1
 fi
+
+echo $VER
 
 echoerr() { echo "$@" 1>&2; }
 if [[ ! ":$PATH:" == *":/usr/local/bin:"* ]]; then
