@@ -3,19 +3,23 @@ package internal
 import (
 	"encoding/xml"
 	"log"
-	"os"
 	"strings"
 
 	"com.go.ieftool/internal/tree"
 )
 
-func getPolicyDetails(filePath string) (*Policy, error) {
+func isPolicy(content []byte) bool {
 	b2cPolicy := &PolicyB2C{}
-	content, err := os.ReadFile(filePath)
+	err := xml.Unmarshal(content, b2cPolicy)
 	if err != nil {
-		return nil, err
+		return false
 	}
-	err = xml.Unmarshal(content, b2cPolicy)
+	return b2cPolicy.PolicyId != ""
+}
+
+func getPolicyDetails(content []byte, filePath string) (*Policy, error) {
+	b2cPolicy := &PolicyB2C{}
+	err := xml.Unmarshal(content, b2cPolicy)
 	if err != nil {
 		return nil, err
 	}

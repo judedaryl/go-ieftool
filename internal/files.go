@@ -16,10 +16,16 @@ func GetPolicies(dir string, policies []Policy) []Policy {
 		Check(err)
 		if !entry.IsDir() {
 			if filepath.Ext(info.Name()) == ".xml" {
-				policy, err := getPolicyDetails(path)
-				checkDuplicate(*policy, policies)
-				Check(err)
-				policies = append(policies, *policy)
+				content, err := os.ReadFile(path)
+				if err != nil {
+					Check(err)
+				}
+				if isPolicy(content) {
+					policy, err := getPolicyDetails(content, path)
+					checkDuplicate(*policy, policies)
+					Check(err)
+					policies = append(policies, *policy)
+				}
 			}
 		} else {
 			policies = GetPolicies(path, policies)
