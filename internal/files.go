@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func TraverseDirectory(dir string, policies []Policy) []Policy {
+func GetPolicies(dir string, policies []Policy) []Policy {
 	entries, err := os.ReadDir(dir)
 	Check(err)
 	for _, entry := range entries {
@@ -22,7 +22,7 @@ func TraverseDirectory(dir string, policies []Policy) []Policy {
 				policies = append(policies, *policy)
 			}
 		} else {
-			policies = TraverseDirectory(path, policies)
+			policies = GetPolicies(path, policies)
 		}
 	}
 	return policies

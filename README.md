@@ -45,7 +45,71 @@ These policies are then batched by their hierarchy in the tree, as well as their
 <br/>
 <br/>
 
-# Getting started
+# Commands
+
+## Build
+
+Compiles and injects variable values into source IEF policies (.xml). The variables are extracted from a configuration file that you can provide using ``--config`` or ``-c`` (defaults to ``ieftool.config``)
+
+### Usage:
+ieftool build [path to source code] [flags]
+
+### Flags:
+|flag|alias|type|description|
+|-|-|-|-|
+|--config|-c|string|Path to the ieftool configuration file (yaml) (default "ieftool.config")|
+|--help|-h|-|help for build|
+
+### Example:
+
+``ieftool.config``
+```yaml
+tenantId: mytenant.onmicrosoft.com
+deploymentMode: Development
+```
+
+``src/BasePolicy.xml``
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TrustFrameworkPolicy 
+    ...
+    TenantId="{{ tenantId }}"  
+    DeploymentMode="{{ deploymentMode }}">
+  ...
+</xml>
+```
+Run the build command
+
+```sh
+# ieftool build [source dir] [target dir] -c [config path]
+ieftool build src output -c ieftool.config
+```
+
+The policies are then compiled into
+
+``output/BasePolicy.xml``
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TrustFrameworkPolicy 
+    ...
+    TenantId="mytenant.onmicrosoft.com"  
+    DeploymentMode="Development">
+  ...
+</xml>
+```
+
+## Deploy
+
+Deploys your policies into Identity Experience Framework.
+
+### Usage:
+ieftool deploy [path to policies] [flags]
+
+### Flags:
+|flag|alias|type|description|
+|-|-|-|-|
+|--help|-h|-|help for build|
+
 
 > Credentials are set using environment variables
 
@@ -54,6 +118,7 @@ export B2C_TENANT_ID=mytenant.onmicrosoft.com
 export B2C_CLIENT_ID=00000000-0000-0000-0000-000000000000
 export B2C_CLIENT_SECRET=some_secret
 
+# ieftool deploy [path to policies]
 ieftool deploy {POLICY_PATH}
 ```
 
