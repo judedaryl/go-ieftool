@@ -60,7 +60,7 @@ curl https://raw.githubusercontent.com/judedaryl/go-ieftool/main/install.sh | ba
 Compiles and injects variable values into source IEF policies (.xml). The variables are extracted from a configuration file that you can provide using ``--config`` or ``-c`` (defaults to ``ieftool.config``)
 
 ### Usage:
-ieftool build [path to source code] [flags]
+ieftool build [path to source code] [path to target directory] [flags]
 
 ### Flags:
 |flag|alias|type|description|

@@ -12,10 +12,10 @@ import (
 )
 
 var build = &cobra.Command{
-	Use:   "build [path to source code]",
+	Use:   "build [path to source code] [path to target directory]",
 	Short: "Build source policies and replacing variables.",
 	Long:  `Build source policies and replacing template variables with their corresponding values.`,
-	Args:  cobra.MinimumNArgs(1),
+	Args:  cobra.MinimumNArgs(2),
 	PersistentPreRun: func(_ *cobra.Command, _ []string) {
 		yqlib.InitExpressionParser()
 		logging.SetLevel(logging.INFO, "")
