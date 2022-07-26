@@ -57,7 +57,7 @@ curl https://raw.githubusercontent.com/judedaryl/go-ieftool/main/install.sh | ba
 
 ## Build
 
-Compiles and injects variable values into source IEF policies (.xml). The variables are extracted from a configuration file that you can provide using ``--config`` or ``-c`` (defaults to ``ieftool.config``)
+Compiles and injects variable values into source IEF policies (.xml). The variables are extracted from a configuration file that you can provide using ``--config`` or ``-c`` (defaults to ``ieftool.config``). The build command can also pickup environment variables that start with ``IEF_*``
 
 ### Usage:
 ieftool build [path to source code] [path to target directory] [flags]
@@ -82,13 +82,15 @@ deploymentMode: Development
 <TrustFrameworkPolicy 
     ...
     TenantId="{{ tenantId }}"  
-    DeploymentMode="{{ deploymentMode }}">
+    DeploymentMode="{{ deploymentMode }}"
+    SomeData="{{ fromEnv }}">
   ...
 </xml>
 ```
 Run the build command
 
 ```sh
+export IEF_fromEnv=FromEnvironment
 # ieftool build [source dir] [target dir] -c [config path]
 ieftool build src output -c ieftool.config
 ```
@@ -101,7 +103,8 @@ The policies are then compiled into
 <TrustFrameworkPolicy 
     ...
     TenantId="mytenant.onmicrosoft.com"  
-    DeploymentMode="Development">
+    DeploymentMode="Development"
+    SomeData="FromEnvironment">
   ...
 </xml>
 ```
