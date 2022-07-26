@@ -33,7 +33,7 @@ func UploadPolicy(accessToken, policyId string, content []byte) {
 		log.Fatalln(err)
 	}
 
-	if resp.StatusCode > 400 {
+	if resp.StatusCode >= 400 {
 		log.Fatalf("Upload failed\n%s\n", string(body))
 	}
 }
