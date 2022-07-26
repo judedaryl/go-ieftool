@@ -41,7 +41,7 @@ func replaceVariable(configPath string, path string) []byte {
 
 	variables := GetRequestedVariables(policy)
 	for _, _var := range variables {
-		val, err := GetVariable("."+_var, configPath)
+		val, err := GetVariable(_var, configPath)
 		Check(err)
 		if val == "" || val == "null" {
 			log.Fatalf("Variable %s is not provided in the config file. File: %s\n", _var, path)

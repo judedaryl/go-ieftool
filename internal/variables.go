@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"os"
 	"regexp"
 	"strings"
 
@@ -41,6 +42,11 @@ func GetRequestedVariables(content string) []string {
 }
 
 func GetVariable(expression string, configPath string) (value string, cmdError error) {
+	fromEnv := os.Getenv("IEF_" + expression)
+	if fromEnv != "" {
+		return fromEnv, nil
+	}
+	_experssion := "." + expression
 	var err error
 	var b bytes.Buffer
 	out := bufio.NewWriter(&b)
@@ -66,7 +72,7 @@ func GetVariable(expression string, configPath string) (value string, cmdError e
 		return "", err
 	}
 	streamEvaluator := yqlib.NewStreamEvaluator()
-	streamEvaluator.EvaluateFiles(expression, []string{configPath}, printer, false, decoder)
+	streamEvaluator.EvaluateFiles(_experssion, []string{configPath}, printer, false, decoder)
 
 	if err == nil && exitStatus && !printer.PrintedAnything() {
 		return "", errors.New("no matches found")
