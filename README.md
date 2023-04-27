@@ -6,7 +6,7 @@ This tool enhances the development experience with B2C policies, policies can no
 
 ### Variables
 
-B2C policies are built on xml and has no support for variables, ieftool introduces a build command that lets you inject variables to your policies either through a configuration file or environment variables. See the build command below for more information.
+B2C policies are built on xml and has no support for variables, ieftool introduces a build command that lets you inject variables to your policies either through a configuration file or environment variables. See the [build command](https://github.com/judedaryl/go-ieftool/blob/main/README.md#build) below for more information.
 
 ### Uploads
 Policies are uploaded in-order based on the inheritance of a policy. Uploads are also faster because policies are uploaded by batch depending on its position on the inheritance tree.
