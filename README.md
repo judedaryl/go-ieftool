@@ -2,8 +2,14 @@
 
 This is a port of the nodejs version https://github.com/judedaryl/ieftool which removes any dependency on nodejs and external libraries and reduces the file size to 9mb.
 
+This tool enhances the development experience with B2C policies, policies can now be ``multi-environment`` by introducing different variable values depending on the environment and helps you upload your policies to Azure B2C seamlessly.
 
-This tool makes it easier for B2C policies to be uploaded in-order based on the inheritance of a policy. Uploads are also faster because policies are uploaded by batch depending on its position on the inheritance tree.
+### Variables
+
+B2C policies are built on xml and has no support for variables, ieftool introduces a build command that lets you inject variables to your policies either through a configuration file or environment variables. See the build command below for more information.
+
+### Uploads
+Policies are uploaded in-order based on the inheritance of a policy. Uploads are also faster because policies are uploaded by batch depending on its position on the inheritance tree.
 
 
 ```pre
