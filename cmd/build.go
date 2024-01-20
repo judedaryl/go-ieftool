@@ -21,6 +21,9 @@ var build = &cobra.Command{
 		cf, _ := cmd.Flags().GetString("config")
 		en, _ := cmd.Flags().GetString("environment")
 		sd, _ := cmd.Flags().GetString("source")
+		if !filepath.IsAbs(sd) {
+			sd, _ = filepath.Abs(sd)
+		}
 		dd, _ := cmd.Flags().GetString("destination")
 		if !filepath.IsAbs(dd) {
 			p := path.Join(sd, "..", dd)

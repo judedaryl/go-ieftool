@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	policy2 "github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	msgraphsdk "github.com/microsoftgraph/msgraph-beta-sdk-go"
@@ -37,6 +38,7 @@ type GraphClient struct {
 	c  *msgraphsdk.GraphServiceClient
 	cr *azidentity.ClientSecretCredential
 	s  []string
+	t  azcore.AccessToken
 }
 
 func NewGraphClientFromEnvironment(e Environment) *GraphClient {
@@ -45,13 +47,24 @@ func NewGraphClientFromEnvironment(e Environment) *GraphClient {
 	}
 
 	es := strings.ReplaceAll(fmt.Sprintf("B2C_CLIENT_SECRET_%s", strings.ToUpper(e.Name)), "-", "_")
-	cr, _ := azidentity.NewClientSecretCredential(
+	cr, err := azidentity.NewClientSecretCredential(
 		e.TenantId,
 		e.ClientId,
 		os.Getenv(es),
 		nil,
 	)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Could not create client credentials. Did you send the env var %s?: %s", es, err.Error()))
+	}
 	g.cr = cr
+
+	t, err := g.cr.GetToken(context.Background(), policy2.TokenRequestOptions{
+		Scopes: g.s,
+	})
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Could not get token. Did you send the env var %s?: %s", es, err))
+	}
+	g.t = t
 
 	c, err := msgraphsdk.NewGraphServiceClientWithCredentials(cr, g.s)
 	if err != nil {
@@ -112,12 +125,6 @@ func (g *GraphClient) uploadPolicy(policy Policy, wg *sync.WaitGroup) {
 	client := &http.Client{}
 	defer client.CloseIdleConnections()
 
-	t, err := g.cr.GetToken(context.Background(), policy2.TokenRequestOptions{
-		Scopes: []string{"https://graph.microsoft.com/.default"},
-	})
-	if err != nil {
-		panic(err)
-	}
 	ep := fmt.Sprintf("https://graph.microsoft.com/beta/trustFramework/policies/%s/$value", policy.PolicyId)
 	req, err := http.NewRequest(http.MethodPut, ep, bytes.NewBuffer(content))
 	if err != nil {
@@ -125,7 +132,7 @@ func (g *GraphClient) uploadPolicy(policy Policy, wg *sync.WaitGroup) {
 	}
 
 	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.Token))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", g.t.Token))
 	resp, err := client.Do(req)
 
 	if err != nil {

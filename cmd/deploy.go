@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"path/filepath"
+
 	"com.go.ieftool/internal"
 	"github.com/spf13/cobra"
 )
@@ -13,6 +15,9 @@ var deploy = &cobra.Command{
 		cf, _ := cmd.Flags().GetString("config")
 		en, _ := cmd.Flags().GetString("environment")
 		bd, _ := cmd.Flags().GetString("build-dir")
+		if !filepath.IsAbs(bd) {
+			bd, _ = filepath.Abs(bd)
+		}
 		e := internal.NewEnvironmentsFromConfig(cf, en)
 		e.Deploy(bd)
 	},
