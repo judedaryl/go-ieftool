@@ -26,6 +26,6 @@ var deploy = &cobra.Command{
 func init() {
 	deploy.Flags().StringP("config", "c", "ieftool.config", "Path to the ieftool configuration file (yaml)")
 	deploy.Flags().StringP("environment", "e", "", "Environment to deploy (deploy all environments if omitted)")
-	deploy.Flags().StringP("build-dir", "b", "", "Build directory")
+	deploy.Flags().StringP("build-dir", "b", "build", "Build directory")
 	rootCmd.AddCommand(deploy)
 }

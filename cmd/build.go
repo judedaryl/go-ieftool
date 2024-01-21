@@ -37,7 +37,7 @@ var build = &cobra.Command{
 
 func init() {
 	build.Flags().StringP("config", "c", "config.yaml", "Path to the ieftool configuration file")
-	build.Flags().StringP("source", "s", "source", "Source directory (current dir if omitted)")
+	build.Flags().StringP("source", "s", "src", "Source directory (current dir if omitted)")
 	build.Flags().StringP("destination", "d", "build", "Destination directory (defaults to build relative to source)")
 	build.Flags().StringP("environment", "e", "", "Environment to build (build all environments if omitted)")
 	rootCmd.AddCommand(build)
