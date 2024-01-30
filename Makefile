@@ -13,4 +13,9 @@ ieftool:
     fi
 
 install: ieftool
+	@echo "Installing ieftool $(VERSION) for $(OS)/$(ARCH)"
 	@sudo mv ieftool /usr/local/bin/ieftool
+
+clean:
+	@rm -Rf build
+	@rm -f ./ieftool

@@ -27,7 +27,7 @@ var build = &cobra.Command{
 
 func init() {
 	globalFlags(build)
-	build.Flags().StringP("source", "s", "src", "Source directory")
-	build.Flags().StringP("destination", "d", "build", "Destination directory")
+	build.Flags().StringP("source", "s", "./src", "Source directory")
+	build.Flags().StringP("destination", "d", "./build", "Destination directory")
 	rootCmd.AddCommand(build)
 }

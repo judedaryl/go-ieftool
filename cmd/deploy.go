@@ -26,6 +26,6 @@ var deploy = &cobra.Command{
 
 func init() {
 	globalFlags(deploy)
-	deploy.Flags().StringP("build-dir", "b", "build", "Build directory")
+	deploy.Flags().StringP("build-dir", "b", "./build", "Build directory")
 	rootCmd.AddCommand(deploy)
 }

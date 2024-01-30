@@ -42,8 +42,8 @@ func init() {
 }
 
 func globalFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("config", "c", "", "Path to the ieftool configuration file (yaml)")
-	cmd.Flags().StringP("environment", "e", "", "Environment to deploy (deploy all environments if omitted)")
+	cmd.Flags().StringP("config", "c", "./config.yaml", "Path to the ieftool configuration file")
+	cmd.Flags().StringP("environment", "e", "", "Environment to deploy (default: all environments)")
 }
 
 func Execute() {

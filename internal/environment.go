@@ -251,7 +251,7 @@ func (es *Environments) filter(n string) {
 }
 
 func (es *Environments) ListRemotePolicies() (map[string][]string, error) {
-	var errs []error
+	var errs Errors
 
 	r := map[string][]string{}
 	for _, e := range es.e {
@@ -262,15 +262,15 @@ func (es *Environments) ListRemotePolicies() (map[string][]string, error) {
 		r[e.Name] = ps
 	}
 
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("%v", errs)
+	if errs.HasErrors() {
+		return nil, errs.Format()
 	}
 
 	return r, nil
 }
 
-func (es *Environments) DeleteRemotePolicies() []error {
-	var errs []error
+func (es *Environments) DeleteRemotePolicies() error {
+	var errs Errors
 
 	for _, e := range es.e {
 		err := e.DeleteRemotePolicies()
@@ -279,5 +279,9 @@ func (es *Environments) DeleteRemotePolicies() []error {
 		}
 	}
 
-	return errs
+	if errs.HasErrors() {
+		return errs.Format()
+	}
+
+	return nil
 }

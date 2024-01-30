@@ -14,11 +14,9 @@ var remove = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		e := internal.MustNewEnvironmentsFromFlags(cmd.Flags())
 
-		errs := e.DeleteRemotePolicies()
-		if errs != nil {
-			for _, err := range errs {
-				log.Println(err)
-			}
+		err := e.DeleteRemotePolicies()
+		if err != nil {
+			log.Fatalf("Failed to remove policies %s", err.Error())
 		}
 
 		return nil

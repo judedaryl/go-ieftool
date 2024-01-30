@@ -46,96 +46,124 @@ These policies are then batched by their hierarchy in the tree, as well as their
 4. 1A_LSS, 1A_LPR
 5. 1A_LSSS
 
-
-
-<br/>
-<br/>
-
-# Installation
-
-Install via curl
-
-```
-curl https://raw.githubusercontent.com/judedaryl/go-ieftool/main/install.sh | bash
-```
-
 # Commands
 
-## Build
+## Usage:
+```bash
+ieftool
+Tooling for Azure B2C Identity Experience Framework
 
-Compiles and injects variable values into source IEF policies (.xml). The variables are extracted from a configuration file that you can provide using ``--config`` or ``-c`` (defaults to ``ieftool.config``). The build command can also pickup environment variables that start with ``IEF_*``
+Usage:
+  ieftool [command]
 
-### Usage:
-ieftool build [path to source code] [path to target directory] [flags]
+Available Commands:
+  build       Build
+  completion  Generate completion script
+  deploy      Deploy b2c policies.
+  help        Help about any command
+  list        List remote b2c policies.
+  remove      Delete remote b2c policies.
 
-### Flags:
-|flag|alias|type|description|
-|-|-|-|-|
-|--config|-c|string|Path to the ieftool configuration file (yaml) (default "ieftool.config")|
-|--help|-h|-|help for build|
+Flags:
+  -h, --help   help for ieftool
+```
 
-### Example:
+### Example config
 
-``ieftool.config``
 ```yaml
-tenantId: mytenant.onmicrosoft.com
-deploymentMode: Development
+# config.yaml
+- name: test
+  tenant: test.onmicrosoft.com
+  tenantId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  clientId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  settings:
+    IdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    ProxyIdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    AADCommonClientID: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    AADCommonObjectID: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
 ```
 
-``src/BasePolicy.xml``
-```xml
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<TrustFrameworkPolicy 
-    ...
-    TenantId="{{ tenantId }}"  
-    DeploymentMode="{{ deploymentMode }}"
-    SomeData="{{ fromEnv }}">
-  ...
-</xml>
+> Secrets for remote operations need to be set using environment variables `B2C_CLIENT_SECRET_<environent>`
+```bash
+export B2C_CLIENT_SECRET_TEST=mysecret
 ```
-Run the build command
-
-```sh
-export IEF_fromEnv=FromEnvironment
-# ieftool build [source dir] [target dir] -c [config path]
-ieftool build src output -c ieftool.config
+> Check for exact variable name
+```bash
+ieftool list -c test/fixtures/config.yaml -e test
+2024/01/30 09:57:04 Failed to list policies could not create client credentials. Did you send the env var B2C_CLIENT_SECRET_TEST?: secret can't be empty string
 ```
 
-The policies are then compiled into
+The required variables in the above example would be 
+- B2C_CLIENT_SECRET_TEST
 
-``output/BasePolicy.xml``
-```xml
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<TrustFrameworkPolicy 
-    ...
-    TenantId="mytenant.onmicrosoft.com"  
-    DeploymentMode="Development"
-    SomeData="FromEnvironment">
-  ...
-</xml>
+
+
+
+
+## Build
+```bash
+ieftool build -h 
+Build source policies and replacing template variables for given environments.
+
+Usage:
+  ieftool build [flags]
+
+Flags:
+  -c, --config string        Path to the ieftool configuration file (default "./config.yaml")
+  -d, --destination string   Destination directory (default "./build")
+  -e, --environment string   Environment to deploy (default: all environments)
+  -h, --help                 help for build
+  -s, --source string        Source directory (default "./src")
 ```
+
+## List
+```bash
+ieftool list -h 
+List remote b2c policies from B2C identity experience framework.
+
+Usage:
+  ieftool list [path to policies] [flags]
+
+Flags:
+  -c, --config string        Path to the ieftool configuration file (default "./config.yaml")
+  -e, --environment string   Environment to deploy (default: all environments)
+  -h, --help                 help for list
+```
+
+> Secret needs to be set using environment variable `B2C_CLIENT_SECRET_<environent>`
+
+## Remove
+```bash
+ieftool remove -h 
+Delete remote b2c policies from B2C identity experience framework.
+
+Usage:
+  ieftool remove [flags]
+
+Flags:
+  -c, --config string        Path to the ieftool configuration file (default "./config.yaml")
+  -e, --environment string   Environment to deploy (default: all environments)
+  -h, --help                 help for remove
+```
+
+> Secret needs to be set using environment variable `B2C_CLIENT_SECRET_<environent>`
+
 
 ## Deploy
+```bash
+ieftool deploy -h 
+Deploy b2c policies to B2C identity experience framework.
 
-Deploys your policies into Identity Experience Framework.
+Usage:
+  ieftool deploy [path to policies] [flags]
 
-### Usage:
-ieftool deploy [path to policies] [flags]
-
-### Flags:
-|flag|alias|type|description|
-|-|-|-|-|
-|--help|-h|-|help for build|
-
-
-> Credentials are set using environment variables
-
-```sh
-export B2C_TENANT_ID=mytenant.onmicrosoft.com
-export B2C_CLIENT_ID=00000000-0000-0000-0000-000000000000
-export B2C_CLIENT_SECRET=some_secret
-
-# ieftool deploy [path to policies]
-ieftool deploy {POLICY_PATH}
+Flags:
+  -b, --build-dir string     Build directory (default "./build")
+  -c, --config string        Path to the ieftool configuration file (default "./config.yaml")
+  -e, --environment string   Environment to deploy (default: all environments)
+  -h, --help                 help for deploy
 ```
+
+> Secret needs to be set using environment variable `B2C_CLIENT_SECRET_<environent>`
+
 

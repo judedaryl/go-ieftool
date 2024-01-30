@@ -16,7 +16,7 @@ var list = &cobra.Command{
 
 		ps, err := e.ListRemotePolicies()
 		if err != nil {
-			log.Fatalf("Failed to llist policies %v", err)
+			log.Fatalf("Failed to list policies %v", err)
 		}
 
 		for n, l := range ps {
