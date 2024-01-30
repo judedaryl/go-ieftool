@@ -22,6 +22,8 @@
 go.work
 
 .vscode
+build
+ieftool
 
 
 

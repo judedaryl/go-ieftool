@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	policy2 "github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	msgraphsdk "github.com/microsoftgraph/msgraph-beta-sdk-go"
 )
@@ -58,7 +58,7 @@ func NewGraphClientFromEnvironment(e Environment) *GraphClient {
 	}
 	g.cr = cr
 
-	t, err := g.cr.GetToken(context.Background(), policy2.TokenRequestOptions{
+	t, err := g.cr.GetToken(context.Background(), policy.TokenRequestOptions{
 		Scopes: g.s,
 	})
 	if err != nil {
@@ -118,14 +118,14 @@ func (g *GraphClient) UploadPolicies(policies []Policy) {
 	wg.Wait()
 }
 
-func (g *GraphClient) uploadPolicy(policy Policy, wg *sync.WaitGroup) {
+func (g *GraphClient) uploadPolicy(p Policy, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	content, _ := os.ReadFile(policy.Path)
+	content, _ := os.ReadFile(p.Path)
 	client := &http.Client{}
 	defer client.CloseIdleConnections()
 
-	ep := fmt.Sprintf("https://graph.microsoft.com/beta/trustFramework/policies/%s/$value", policy.PolicyId)
+	ep := fmt.Sprintf("https://graph.microsoft.com/beta/trustFramework/policies/%s/$value", p.PolicyId)
 	req, err := http.NewRequest(http.MethodPut, ep, bytes.NewBuffer(content))
 	if err != nil {
 		panic(err)
@@ -138,6 +138,7 @@ func (g *GraphClient) uploadPolicy(policy Policy, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 
@@ -146,8 +147,8 @@ func (g *GraphClient) uploadPolicy(policy Policy, wg *sync.WaitGroup) {
 	}
 
 	if resp.StatusCode >= 400 {
-		log.Fatalf("Upload failed for policy %s \n%s\n", policy.PolicyId, string(body))
+		log.Fatalf("Upload failed for p %s \n%s\n", p.PolicyId, string(body))
 	}
 
-	log.Println(fmt.Sprintf("Policy %s uploaded", policy.PolicyId))
+	log.Println(fmt.Sprintf("Policy %s uploaded", p.PolicyId))
 }

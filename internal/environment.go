@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,54 +23,78 @@ type Environment struct {
 	Settings map[string]interface{} `yaml:"settings"`
 }
 
-func (env Environment) Build(s string, d string) {
+func (env Environment) Build(s string, d string) error {
+	var errs Errors
 	root := s
-	_ = filepath.WalkDir(s, func(p string, e fs.DirEntry, err error) error {
+	err := filepath.WalkDir(s, func(p string, e fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if e.IsDir() {
 			return nil
 		}
 		if filepath.Ext(e.Name()) == ".xml" {
 			t := path.Join(d, strings.ReplaceAll(p, root, env.Name))
-			c := env.replaceVariables(p)
-			err = os.MkdirAll(filepath.Dir(t), os.ModePerm)
-			if err != nil {
-				return err
+			c, ve := env.replaceVariables(p)
+			if ve != nil {
+				errs = append(errs, ve)
+				return nil
+			}
+			ve = os.MkdirAll(filepath.Dir(t), os.ModePerm)
+			if ve != nil {
+				errs = append(errs, ve)
+				return nil
 			}
 			log.Printf("Compiled %s", t)
-			err = os.WriteFile(t, c, os.ModePerm)
-			if err != nil {
-				return err
+			ve = os.WriteFile(t, c, os.ModePerm)
+			if ve != nil {
+				errs = append(errs, ve)
+				return nil
 			}
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	if errs.HasErrors() {
+		return errs.Format()
+	}
+
+	return nil
 }
 
-func (env Environment) replaceVariables(p string) []byte {
+func (env Environment) replaceVariables(p string) ([]byte, error) {
 	content, err := os.ReadFile(p)
 	policy := string(content)
-	Check(err)
+	if err != nil {
+		return nil, err
+	}
 
-	variables := env.getVariables(policy)
-	for _, _var := range variables {
-		var val string
-		if strings.ToLower(_var) == "tenant" {
-			val = env.Tenant
-		} else {
-			val, err = env.getValue(_var)
-			Check(err)
+	var errs Errors
+	for _, v := range env.variables(policy) {
+		val, ve := env.value(v)
+		if ve != nil {
+			errs = append(errs, fmt.Errorf("%s: but required in source %s", ve.Error(), p))
+			continue
 		}
 		if val == "" || val == "null" {
-			log.Fatalf("Variable %s is not provided in the config file. File: %s\n", _var, p)
+			errs = append(errs, fmt.Errorf("variable '%s' must not be empty: source %s", v, p))
+			continue
 		}
-		re := regexp.MustCompile(fmt.Sprintf("{Settings:%s}", _var))
+		re := regexp.MustCompile(fmt.Sprintf("{Settings:%s}", v))
 		policy = re.ReplaceAllString(policy, val)
 	}
 
-	return []byte(policy)
+	if errs.HasErrors() {
+		return nil, errs.Format()
+	}
+
+	return []byte(policy), nil
 }
 
-func (env Environment) getVariables(c string) []string {
+func (env Environment) variables(c string) []string {
 	re := regexp.MustCompile(`{Settings:(.+)}`)
 	m := re.FindAllStringSubmatch(c, -1)
 	var cm []string
@@ -84,12 +109,17 @@ func (env Environment) getVariables(c string) []string {
 	return cm
 }
 
-func (env Environment) getValue(v string) (string, error) {
-	if env.Settings[v] == nil {
-		return "", errors.New(fmt.Sprintf("Variable %s is not provided in settings", v))
-	}
+func (env Environment) value(n string) (string, error) {
+	switch n {
+	case "Tenant":
+		return env.Tenant, nil
+	default:
+		if env.Settings[n] == nil {
+			return "", fmt.Errorf("variable '%s' is not provided in settings", n)
+		}
 
-	return env.Settings[v].(string), nil
+		return env.Settings[n].(string), nil
+	}
 }
 
 func (env Environment) Deploy(d string) {
@@ -119,17 +149,36 @@ type Environments struct {
 	d string
 }
 
-func NewEnvironmentsFromConfig(p string, n string) Environments {
+func MustNewEnvironmentsFromFlags(f *pflag.FlagSet) *Environments {
+	cf, err := f.GetString("config")
+	if err != nil {
+		log.Fatalf("could not read environments config: \n%s", err.Error())
+	}
+
+	en, err := f.GetString("environment")
+	if err != nil {
+		log.Fatalf("could not read environments config: \n%s", err.Error())
+	}
+
+	e, err := NewEnvironmentsFromConfig(cf, en)
+	if err != nil {
+		log.Fatalf("could not read environments config: \n%s", err.Error())
+	}
+
+	return e
+}
+
+func NewEnvironmentsFromConfig(p string, n string) (*Environments, error) {
 	var e []Environment
 
 	c, err := os.ReadFile(p)
 	if err != nil {
-		panic(fmt.Sprintf("Could not read %s: %s", p, err.Error()))
+		return nil, errors.New(fmt.Sprintf("Could not read %s: %s", p, err.Error()))
 	}
 
 	err = yaml.Unmarshal(c, &e)
 	if err != nil {
-		panic(fmt.Sprintf("Could not unmarshal config from %s: %s", p, err.Error()))
+		return nil, errors.New(fmt.Sprintf("Could not unmarshal config from %s: %s", p, err.Error()))
 	}
 
 	es := Environments{
@@ -138,19 +187,28 @@ func NewEnvironmentsFromConfig(p string, n string) Environments {
 	es.e = e
 	es.filter(n)
 
-	return es
+	return &es, nil
 }
 
-func (es Environments) Build(s string, d string) {
+func (es *Environments) Len() int {
+	return len(es.e)
+}
+
+func (es *Environments) Build(s string, d string) error {
 	es.s = s
 	es.d = d
 
 	for _, e := range es.e {
-		e.Build(es.s, es.d)
+		err := e.Build(es.s, es.d)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (es Environments) Deploy(d string) {
+func (es *Environments) Deploy(d string) {
 	es.d = d
 
 	for _, e := range es.e {
@@ -158,7 +216,7 @@ func (es Environments) Deploy(d string) {
 	}
 }
 
-func (es Environments) filter(n string) {
+func (es *Environments) filter(n string) {
 	var ne []Environment
 
 	for _, e := range es.e {
@@ -170,7 +228,7 @@ func (es Environments) filter(n string) {
 	es.e = ne
 }
 
-func (es Environments) ListRemotePolicies() (map[string][]string, []error) {
+func (es *Environments) ListRemotePolicies() (map[string][]string, error) {
 	var errs []error
 
 	r := map[string][]string{}
@@ -182,10 +240,14 @@ func (es Environments) ListRemotePolicies() (map[string][]string, []error) {
 		r[e.Name] = ps
 	}
 
-	return r, errs
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("%v", errs)
+	}
+
+	return r, nil
 }
 
-func (es Environments) DeleteRemotePolicies() []error {
+func (es *Environments) DeleteRemotePolicies() []error {
 	var errs []error
 
 	for _, e := range es.e {
