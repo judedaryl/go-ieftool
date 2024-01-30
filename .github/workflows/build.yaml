@@ -1,9 +1,9 @@
-name: Release
+name: Build
 
 on:
   push:
     branches:
-      - "*"
+      - '!main'
 
 jobs:
   test:
@@ -19,7 +19,7 @@ jobs:
 
       - name: Test
         run: |
-          go test ./cmd ./internal
+          go test -v ./cmd ./internal
 
       - name: Build
         run: |
