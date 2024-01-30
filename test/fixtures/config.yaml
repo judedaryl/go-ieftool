@@ -1,0 +1,19 @@
+- name: test
+  tenant: test.onmicrosoft.com
+  tenantId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  clientId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  settings:
+    IdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    ProxyIdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    AADCommonClientID: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    AADCommonObjectID: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+
+- name: test2
+  tenant: test2.onmicrosoft.com
+  tenantId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  clientId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  settings:
+    IdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    ProxyIdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    AADCommonClientID: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+    AADCommonObjectID: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
