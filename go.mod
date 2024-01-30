@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.1
 	github.com/microsoftgraph/msgraph-beta-sdk-go v0.91.0
-	github.com/microsoftgraph/msgraph-sdk-go v1.30.0
 	github.com/spf13/cobra v1.5.0
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 	gopkg.in/yaml.v3 v3.0.1
