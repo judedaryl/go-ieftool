@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"log"
+
 	"com.go.ieftool/internal"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +15,10 @@ var deploy = &cobra.Command{
 		e := internal.MustNewEnvironmentsFromFlags(cmd.Flags())
 		bd := internal.MustAbsPathFromFlag(cmd.Flags(), "build-dir")
 
-		e.Deploy(bd)
+		err := e.Deploy(bd)
+		if err != nil {
+			log.Fatalf("failed to deploy policies %v", err)
+		}
 
 		return nil
 	},

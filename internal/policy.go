@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -28,6 +27,7 @@ type PolicyIdB2C struct {
 func (p *PolicyB2C) isPolicy(content []byte) bool {
 	err := xml.Unmarshal(content, p)
 	if err != nil {
+		log.Printf("")
 		return false
 	}
 	return p.PolicyId != ""
@@ -42,7 +42,7 @@ type Policy struct {
 func NewPolicy(content []byte, filePath string) (*Policy, error) {
 	b2cPolicy := &PolicyB2C{}
 	if !b2cPolicy.isPolicy(content) {
-		return nil, errors.New(fmt.Sprintf("File %s is not a policy", filePath))
+		return nil, fmt.Errorf("fFile %s is not a policy", filePath)
 	}
 
 	policy := &Policy{
@@ -63,39 +63,57 @@ func (p Policy) HasParent() bool {
 
 type Policies []Policy
 
-func NewPoliciesFromDir(d string) Policies {
+func NewPoliciesFromDir(d string) (Policies, error) {
 	ps := Policies{}
-	ps.get(d)
 
-	return ps
+	err := ps.load(d)
+	if err != nil {
+		return nil, err
+	}
+
+	return ps, nil
 }
 
-func (ps *Policies) get(d string) {
+func (ps *Policies) load(d string) error {
 	entries, err := os.ReadDir(d)
-	Check(err)
+	if err != nil {
+		return err
+	}
 	for _, entry := range entries {
 		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
 		name := info.Name()
 		path := filepath.Join(d, name)
-		Check(err)
 		if !entry.IsDir() {
 			if filepath.Ext(info.Name()) == ".xml" {
 				content, err := os.ReadFile(path)
 				if err != nil {
-					Check(err)
+					return err
 				}
 				p, err := NewPolicy(content, path)
-				Check(err)
-				ps.checkDuplicate(p)
+				if err != nil {
+					return err
+				}
+				err = ps.checkDuplicate(p)
+				if err != nil {
+					return err
+				}
 				*ps = append(*ps, *p)
 			}
 		} else {
-			ps.get(path)
+			err := ps.load(path)
+			if err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
-func (ps *Policies) checkDuplicate(policy *Policy) {
+func (ps *Policies) checkDuplicate(policy *Policy) error {
 	hasDuplicate := false
 	for _, p := range *ps {
 		if p.PolicyId == policy.PolicyId {
@@ -104,8 +122,10 @@ func (ps *Policies) checkDuplicate(policy *Policy) {
 	}
 
 	if hasDuplicate {
-		log.Fatalf("Found duplicate policies %s: %s", policy.PolicyId, policy.Path)
+		return fmt.Errorf("found duplicate policies %s: %s", policy.PolicyId, policy.Path)
 	}
+
+	return nil
 }
 
 func (ps *Policies) GetBatch() [][]Policy {

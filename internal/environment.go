@@ -122,24 +122,41 @@ func (env Environment) value(n string) (string, error) {
 	}
 }
 
-func (env Environment) Deploy(d string) {
-	ps := NewPoliciesFromDir(path.Join(d, env.Name))
+func (env Environment) Deploy(d string) error {
+	ps, err := NewPoliciesFromDir(path.Join(d, env.Name))
+	if err != nil {
+		return err
+	}
 	bs := ps.GetBatch()
 
-	g := NewGraphClientFromEnvironment(env)
+	g, err := NewGraphClientFromEnvironment(env)
+	if err != nil {
+		return err
+	}
+
 	for i, b := range bs {
 		log.Printf("Processing batch %d", i)
 		g.UploadPolicies(b)
 	}
+
+	return nil
 }
 
 func (env Environment) ListRemotePolicies() ([]string, error) {
-	g := NewGraphClientFromEnvironment(env)
+	g, err := NewGraphClientFromEnvironment(env)
+	if err != nil {
+		return nil, err
+	}
+
 	return g.ListPolicies()
 }
 
 func (env Environment) DeleteRemotePolicies() error {
-	g := NewGraphClientFromEnvironment(env)
+	g, err := NewGraphClientFromEnvironment(env)
+	if err != nil {
+		return err
+	}
+
 	return g.DeletePolicies()
 }
 
@@ -152,12 +169,12 @@ type Environments struct {
 func MustNewEnvironmentsFromFlags(f *pflag.FlagSet) *Environments {
 	cf, err := f.GetString("config")
 	if err != nil {
-		log.Fatalf("could not read environments config: \n%s", err.Error())
+		log.Fatalf("could not parse flag 'config': \n%s", err.Error())
 	}
 
 	en, err := f.GetString("environment")
 	if err != nil {
-		log.Fatalf("could not read environments config: \n%s", err.Error())
+		log.Fatalf("could not parse flag 'environment': \n%s", err.Error())
 	}
 
 	e, err := NewEnvironmentsFromConfig(cf, en)
@@ -208,12 +225,17 @@ func (es *Environments) Build(s string, d string) error {
 	return nil
 }
 
-func (es *Environments) Deploy(d string) {
+func (es *Environments) Deploy(d string) error {
 	es.d = d
 
 	for _, e := range es.e {
-		e.Deploy(es.d)
+		err := e.Deploy(es.d)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func (es *Environments) filter(n string) {

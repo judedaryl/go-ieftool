@@ -41,7 +41,15 @@ type GraphClient struct {
 	t  azcore.AccessToken
 }
 
-func NewGraphClientFromEnvironment(e Environment) *GraphClient {
+func MustNewGraphClientFromEnvironment(e Environment) *GraphClient {
+	g, err := NewGraphClientFromEnvironment(e)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	return g
+}
+func NewGraphClientFromEnvironment(e Environment) (*GraphClient, error) {
 	g := &GraphClient{
 		s: []string{"https://graph.microsoft.com/.default"},
 	}
@@ -54,7 +62,7 @@ func NewGraphClientFromEnvironment(e Environment) *GraphClient {
 		nil,
 	)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Could not create client credentials. Did you send the env var %s?: %s", es, err.Error()))
+		return nil, fmt.Errorf("could not create client credentials. Did you send the env var %s?: %s", es, err.Error())
 	}
 	g.cr = cr
 
@@ -62,17 +70,17 @@ func NewGraphClientFromEnvironment(e Environment) *GraphClient {
 		Scopes: g.s,
 	})
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Could not get token. Did you send the env var %s?: %s", es, err))
+		return nil, fmt.Errorf("could not get token. Did you send the env var %s?: %s", es, err)
 	}
 	g.t = t
 
 	c, err := msgraphsdk.NewGraphServiceClientWithCredentials(cr, g.s)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	g.c = c
 
-	return g
+	return g, nil
 }
 
 func (g *GraphClient) ListPolicies() ([]string, error) {
@@ -128,7 +136,7 @@ func (g *GraphClient) uploadPolicy(p Policy, wg *sync.WaitGroup) {
 	ep := fmt.Sprintf("https://graph.microsoft.com/beta/trustFramework/policies/%s/$value", p.PolicyId)
 	req, err := http.NewRequest(http.MethodPut, ep, bytes.NewBuffer(content))
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
@@ -147,7 +155,7 @@ func (g *GraphClient) uploadPolicy(p Policy, wg *sync.WaitGroup) {
 	}
 
 	if resp.StatusCode >= 400 {
-		log.Fatalf("Upload failed for p %s \n%s\n", p.PolicyId, string(body))
+		log.Fatalf("Upload failed for policy %s \n%s\n", p.PolicyId, string(body))
 	}
 
 	log.Println(fmt.Sprintf("Policy %s uploaded", p.PolicyId))
