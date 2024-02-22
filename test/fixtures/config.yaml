@@ -2,6 +2,7 @@
   tenant: test.onmicrosoft.com
   tenantId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
   clientId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
+  samlCertPath: ../test/fixtures/test_cert.pem
   settings:
     IdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff
     ProxyIdentityExperienceFrameworkAppId: aaaaaaaa-cccc-dddd-eeee-ffffffffffff

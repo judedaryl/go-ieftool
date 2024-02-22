@@ -1,6 +1,6 @@
 package main
 
-import "com.go.ieftool/cmd"
+import "com.schumann-it.go-ieftool/cmd"
 
 func main() {
 	cmd.Execute()

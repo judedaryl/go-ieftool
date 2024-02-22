@@ -84,7 +84,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [buildMacArm,buildMac,buildLinux,buildWin]
+    needs: [ buildMacArm,buildMac,buildLinux,buildWin ]
     steps:
       - uses: actions/download-artifact@v2
         with:

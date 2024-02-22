@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	logging "gopkg.in/op/go-logging.v1"
+	"gopkg.in/op/go-logging.v1"
 )
 
 var rootCmd = &cobra.Command{

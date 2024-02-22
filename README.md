@@ -1,16 +1,22 @@
 # Identity Experience Framework tool
 
-This is a port of the nodejs version https://github.com/judedaryl/ieftool which removes any dependency on nodejs and external libraries and reduces the file size to 9mb.
+This is a port of the nodejs version https://github.com/judedaryl/ieftool which removes any dependency on nodejs and
+external libraries and reduces the file size to 9mb.
 
-This tool enhances the development experience with B2C policies, policies can now be ``multi-environment`` by introducing different variable values depending on the environment and helps you upload your policies to Azure B2C seamlessly.
+This tool enhances the development experience with B2C policies, policies can now be ``multi-environment`` by
+introducing different variable values depending on the environment and helps you upload your policies to Azure B2C
+seamlessly.
 
 ### Variables
 
-B2C policies are built on xml and has no support for variables, ieftool introduces a build command that lets you inject variables to your policies either through a configuration file or environment variables. See the [build command](https://github.com/judedaryl/go-ieftool/blob/main/README.md#build) below for more information.
+B2C policies are built on xml and has no support for variables, ieftool introduces a build command that lets you inject
+variables to your policies either through a configuration file or environment variables. See
+the [build command](https://github.com/judedaryl/go-ieftool/blob/main/README.md#build) below for more information.
 
 ### Uploads
-Policies are uploaded in-order based on the inheritance of a policy. Uploads are also faster because policies are uploaded by batch depending on its position on the inheritance tree.
 
+Policies are uploaded in-order based on the inheritance of a policy. Uploads are also faster because policies are
+uploaded by batch depending on its position on the inheritance tree.
 
 ```pre
 src/
@@ -38,7 +44,8 @@ The example folder structure above has the following inheritance tree.
        1A_LSS  1A_LPR    1A_SSS
 ```
 
-These policies are then batched by their hierarchy in the tree, as well as their parent policy. The order of upload would then be.
+These policies are then batched by their hierarchy in the tree, as well as their parent policy. The order of upload
+would then be.
 
 1. 1A_Base
 2. 1A_EXT
@@ -49,6 +56,7 @@ These policies are then batched by their hierarchy in the tree, as well as their
 # Commands
 
 ## Usage:
+
 ```bash
 ieftool
 Tooling for Azure B2C Identity Experience Framework
@@ -84,23 +92,24 @@ Flags:
 ```
 
 > Secrets for remote operations need to be set using environment variables `B2C_CLIENT_SECRET_<environent>`
+
 ```bash
 export B2C_CLIENT_SECRET_TEST=mysecret
 ```
+
 > Check for exact variable name
+
 ```bash
 ieftool list -c test/fixtures/config.yaml -e test
 2024/01/30 09:57:04 Failed to list policies could not create client credentials. Did you send the env var B2C_CLIENT_SECRET_TEST?: secret can't be empty string
 ```
 
-The required variables in the above example would be 
+The required variables in the above example would be
+
 - B2C_CLIENT_SECRET_TEST
 
-
-
-
-
 ## Build
+
 ```bash
 ieftool build -h 
 Build source policies and replacing template variables for given environments.
@@ -117,6 +126,7 @@ Flags:
 ```
 
 ## List
+
 ```bash
 ieftool list -h 
 List remote b2c policies from B2C identity experience framework.
@@ -133,6 +143,7 @@ Flags:
 > Secret needs to be set using environment variable `B2C_CLIENT_SECRET_<environent>`
 
 ## Remove
+
 ```bash
 ieftool remove -h 
 Delete remote b2c policies from B2C identity experience framework.
@@ -148,8 +159,8 @@ Flags:
 
 > Secret needs to be set using environment variable `B2C_CLIENT_SECRET_<environent>`
 
-
 ## Deploy
+
 ```bash
 ieftool deploy -h 
 Deploy b2c policies to B2C identity experience framework.

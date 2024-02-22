@@ -22,6 +22,8 @@ github.com/golang-jwt/jwt/v5 v5.2.0/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVI
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/uuid v1.5.0 h1:1p67kYwdtXjb0gL0BPiP1Av9wiZPo5A8z2cWkTZ+eyU=
 github.com/google/uuid v1.5.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/hashicorp/go-version v1.6.0 h1:feTTfFNnjP967rlCxM/I9g701jU+RN74YKx2mOkIeek=
+github.com/hashicorp/go-version v1.6.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
@@ -44,8 +46,6 @@ github.com/microsoft/kiota-serialization-text-go v1.0.0 h1:XOaRhAXy+g8ZVpcq7x7a0
 github.com/microsoft/kiota-serialization-text-go v1.0.0/go.mod h1:sM1/C6ecnQ7IquQOGUrUldaO5wj+9+v7G2W3sQ3fy6M=
 github.com/microsoftgraph/msgraph-beta-sdk-go v0.91.0 h1:JTWQUKRPO4oEElSzBezw7r56NvENr+sHqpWuBJAr42Q=
 github.com/microsoftgraph/msgraph-beta-sdk-go v0.91.0/go.mod h1:Ddr4SRN3rDrWrCUOWuz0w3D5v/4tCO5dGccyCnonAyo=
-github.com/microsoftgraph/msgraph-sdk-go v1.30.0 h1:KbP7PPsLPrWT3jy377/qDPSrl0CUhZvaQUZujnsqzU4=
-github.com/microsoftgraph/msgraph-sdk-go v1.30.0/go.mod h1:lhcb/pb6Ae/auQmcFYZkr0gNwSWCR5wrvN7yow1x5Yc=
 github.com/microsoftgraph/msgraph-sdk-go-core v1.0.1 h1:uq4qZD8VXLiNZY0t4NoRpLDoEiNYJvAQK3hc0ZMmdxs=
 github.com/microsoftgraph/msgraph-sdk-go-core v1.0.1/go.mod h1:HUITyuFN556+0QZ/IVfH5K4FyJM7kllV6ExKi2ImKhE=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=

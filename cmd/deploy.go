@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"com.go.ieftool/internal"
+	"com.schumann-it.go-ieftool/internal"
 	"github.com/spf13/cobra"
 )
 

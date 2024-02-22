@@ -1,4 +1,4 @@
-package internal
+package trustframework
 
 import (
 	"encoding/xml"
@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"com.go.ieftool/internal/tree"
+	"com.schumann-it.go-ieftool/internal/tree"
 )
 
 type PolicyB2C struct {

@@ -11,26 +11,20 @@ import (
 	"regexp"
 	"strings"
 
+	"com.schumann-it.go-ieftool/internal/msgraph/trustframework"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
 type Environment struct {
-	Name     string                 `yaml:"name"`
-	Tenant   string                 `yaml:"tenant"`
-	TenantId string                 `yaml:"tenantId"`
-	ClientId string                 `yaml:"clientId"`
-	Settings map[string]interface{} `yaml:"settings"`
-}
-
-func NewEnvironment(name, tenant, tenantID, clientID string) Environment {
-	return Environment{
-		Name:     name,
-		Tenant:   tenant,
-		TenantId: tenantID,
-		ClientId: clientID,
-		Settings: nil,
-	}
+	Name                                string  `yaml:"name"`
+	Tenant                              string  `yaml:"tenant"`
+	TenantId                            string  `yaml:"tenantId"`
+	ClientId                            string  `yaml:"clientId"`
+	IdentityExperienceFrameworkObjectId string  `yaml:"identityExperienceFrameworkObjectId"`
+	SamlCertPath                        *string `yaml:"samlCertPath,omitempty"`
+	SamlCert                            []byte
+	Settings                            map[string]interface{} `yaml:"settings"`
 }
 
 func (env Environment) Build(s string, d string) error {
@@ -133,7 +127,7 @@ func (env Environment) value(n string) (string, error) {
 }
 
 func (env Environment) Deploy(d string) error {
-	ps, err := NewPoliciesFromDir(path.Join(d, env.Name))
+	ps, err := trustframework.NewPoliciesFromDir(path.Join(d, env.Name))
 	if err != nil {
 		return err
 	}
@@ -168,6 +162,35 @@ func (env Environment) DeleteRemotePolicies() error {
 	}
 
 	return g.DeletePolicies()
+}
+
+func (env Environment) FixAppRegistrations() error {
+	g, err := NewGraphClientFromEnvironment(env)
+	if err != nil {
+		return err
+	}
+
+	return g.FixAppRegistration(env.IdentityExperienceFrameworkObjectId)
+}
+
+func (env Environment) CreateKeySets() error {
+	g, err := NewGraphClientFromEnvironment(env)
+	if err != nil {
+		return err
+	}
+
+	es := strings.ReplaceAll(fmt.Sprintf("B2C_SAML_CERT_PW_%s", strings.ToUpper(env.Name)), "-", "_")
+
+	return g.CreateKeySets(env.SamlCert, es)
+}
+
+func (env Environment) DeleteKeySets() interface{} {
+	g, err := NewGraphClientFromEnvironment(env)
+	if err != nil {
+		return err
+	}
+
+	return g.DeleteKeySets()
 }
 
 type Environments struct {
@@ -213,6 +236,20 @@ func NewEnvironmentsFromConfig(p string, n string) (*Environments, error) {
 	}
 	es.e = e
 	es.filter(n)
+
+	for i, _ := range es.e {
+		if es.e[i].SamlCertPath != nil {
+			sp, err := filepath.Abs(*es.e[i].SamlCertPath)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Could not find saml cert %s: %s", *es.e[i].SamlCertPath, err.Error()))
+			}
+			b, err := os.ReadFile(sp)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Could not read saml cert %s: %s", p, err.Error()))
+			}
+			es.e[i].SamlCert = b
+		}
+	}
 
 	return &es, nil
 }
@@ -286,6 +323,57 @@ func (es *Environments) DeleteRemotePolicies() error {
 		err := e.DeleteRemotePolicies()
 		if err != nil {
 			errs = append(errs, errors.New(fmt.Sprintf("Failed to delete policies from environment %s: %s", e.Name, err)))
+		}
+	}
+
+	if errs.HasErrors() {
+		return errs.Format()
+	}
+
+	return nil
+}
+
+func (es *Environments) FixAppRegistrations() error {
+	var errs Errors
+
+	for _, e := range es.e {
+		err := e.FixAppRegistrations()
+		if err != nil {
+			errs = append(errs, errors.New(fmt.Sprintf("Failed to fix app registrations from environment %s: %s", e.Name, err)))
+		}
+	}
+
+	if errs.HasErrors() {
+		return errs.Format()
+	}
+
+	return nil
+}
+
+func (es *Environments) CreateKeySets() error {
+	var errs Errors
+
+	for _, e := range es.e {
+		err := e.CreateKeySets()
+		if err != nil {
+			errs = append(errs, errors.New(fmt.Sprintf("Failed to key sets from environment %s: %s", e.Name, err)))
+		}
+	}
+
+	if errs.HasErrors() {
+		return errs.Format()
+	}
+
+	return nil
+}
+
+func (es *Environments) DeleteKeySets() error {
+	var errs Errors
+
+	for _, e := range es.e {
+		err := e.DeleteKeySets()
+		if err != nil {
+			errs = append(errs, errors.New(fmt.Sprintf("Failed to key sets from environment %s: %s", e.Name, err)))
 		}
 	}
 

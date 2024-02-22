@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
-	"com.go.ieftool/internal"
+	"com.schumann-it.go-ieftool/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -12,33 +12,17 @@ var fix = &cobra.Command{
 	Short: "Fix App Registrations",
 	Long:  `Fix App Registration manifest.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		tid, err := cmd.Flags().GetString("tenant-id")
-		if err != nil {
-			log.Fatalf("could not parse flag 'tenant-id': \n%s", err.Error())
-		}
-		cid, err := cmd.Flags().GetString("client-id")
-		if err != nil {
-			log.Fatalf("could not parse flag 'client-id': \n%s", err.Error())
-		}
-		aid, err := cmd.Flags().GetString("application-object-id")
-		if err != nil {
-			log.Fatalf("could not parse flag 'application-id': \n%s", err.Error())
-		}
+		e := internal.MustNewEnvironmentsFromFlags(cmd.Flags())
 
-		g, err := internal.NewGraphClient(tid, cid)
+		err := e.FixAppRegistrations()
 		if err != nil {
-			log.Fatalf("could not create graph client: \n%s", err.Error())
+			return fmt.Errorf("errors occurred during fix app registrations process: \n%s", err.Error())
 		}
-
-		err = g.FixAppRegistration(aid)
 		return err
 	},
 }
 
 func init() {
-	fix.Flags().String("tenant-id", "", "Tenant ID")
-	fix.Flags().String("client-id", "", "Client ID")
-	fix.Flags().String("application-object-id", "", "Application Object ID")
-
+	globalFlags(fix)
 	rootCmd.AddCommand(fix)
 }
