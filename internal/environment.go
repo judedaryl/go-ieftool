@@ -23,6 +23,16 @@ type Environment struct {
 	Settings map[string]interface{} `yaml:"settings"`
 }
 
+func NewEnvironment(name, tenant, tenantID, clientID string) Environment {
+	return Environment{
+		Name:     name,
+		Tenant:   tenant,
+		TenantId: tenantID,
+		ClientId: clientID,
+		Settings: nil,
+	}
+}
+
 func (env Environment) Build(s string, d string) error {
 	var errs Errors
 	root := s

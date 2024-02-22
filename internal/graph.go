@@ -49,6 +49,7 @@ func MustNewGraphClientFromEnvironment(e Environment) *GraphClient {
 
 	return g
 }
+
 func NewGraphClientFromEnvironment(e Environment) (*GraphClient, error) {
 	g := &GraphClient{
 		s: []string{"https://graph.microsoft.com/.default"},
@@ -71,6 +72,38 @@ func NewGraphClientFromEnvironment(e Environment) (*GraphClient, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not get token. Did you send the env var %s?: %s", es, err)
+	}
+	g.t = t
+
+	c, err := msgraphsdk.NewGraphServiceClientWithCredentials(cr, g.s)
+	if err != nil {
+		return nil, err
+	}
+	g.c = c
+
+	return g, nil
+}
+
+func NewGraphClient(tid, cid string) (*GraphClient, error) {
+	g := &GraphClient{
+		s: []string{"https://graph.microsoft.com/.default"},
+	}
+
+	cr, err := azidentity.NewClientSecretCredential(
+		tid,
+		cid,
+		os.Getenv("SECRET"),
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not create client credentials. Did you send the env var 'SECRET'?: %s", err.Error())
+	}
+	g.cr = cr
+	t, err := g.cr.GetToken(context.Background(), policy.TokenRequestOptions{
+		Scopes: g.s,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not get token. Did you send the env var 'SECRET'?: %s", err)
 	}
 	g.t = t
 
@@ -159,4 +192,41 @@ func (g *GraphClient) uploadPolicy(p Policy, wg *sync.WaitGroup) {
 	}
 
 	log.Println(fmt.Sprintf("Policy %s uploaded", p.PolicyId))
+}
+
+func (g *GraphClient) FixAppRegistration(appID string) error {
+	client := &http.Client{}
+	defer client.CloseIdleConnections()
+
+	rb, err := os.ReadFile("./internal/manifests/IdentityExperienceFramework.json")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	ep := fmt.Sprintf("https://graph.microsoft.com/beta/applications/%s", appID)
+	req, err := http.NewRequest(http.MethodPatch, ep, bytes.NewBuffer(rb))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", g.t.Token))
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if resp.StatusCode >= 400 {
+		log.Fatalf("Patch app failed \n%s\n", string(body))
+	}
+
+	return nil
 }
