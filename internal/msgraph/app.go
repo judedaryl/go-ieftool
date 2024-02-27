@@ -9,19 +9,12 @@ import (
 	"net/http"
 )
 
-//go:embed trustframework/PatchIdentityExperienceFramework.json
-var identityExperienceFrameworkPatch string
-
-func (c *Client) FixAppRegistration(appID string) error {
-	if appID == "" {
-		return fmt.Errorf("please specify identityExperienceFrameworkObjectId in envirnment")
-	}
-
+func (c *Client) FixAppRegistration(id string, patch []byte) error {
 	client := &http.Client{}
 	defer client.CloseIdleConnections()
 
-	ep := fmt.Sprintf("https://graph.microsoft.com/beta/applications/%s", appID)
-	req, err := http.NewRequest(http.MethodPatch, ep, bytes.NewBuffer([]byte(identityExperienceFrameworkPatch)))
+	ep := fmt.Sprintf("https://graph.microsoft.com/beta/applications/%s", id)
+	req, err := http.NewRequest(http.MethodPatch, ep, bytes.NewBuffer(patch))
 	if err != nil {
 		log.Fatalln(err)
 	}

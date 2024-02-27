@@ -1,6 +1,8 @@
 package internal
 
 import (
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -16,15 +18,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+//go:embed msgraph/trustframework/ApplicationPatchIdentityFramework.json
+var iefApplicationPatch []byte
+
+//go:embed msgraph/trustframework/ApplicationPatchSaml.json
+var samlApplicationPatch []byte
+
+type EnvironmentSaml struct {
+	AppObjectId *string `yaml:"appObjectId,omitempty"`
+	MetadataUrl *string `yaml:"metadataUrl,omitempty"`
+	CertPath    *string `yaml:"certPath,omitempty"`
+	Cert        []byte
+}
+
 type Environment struct {
-	Name                                string  `yaml:"name"`
-	Tenant                              string  `yaml:"tenant"`
-	TenantId                            string  `yaml:"tenantId"`
-	ClientId                            string  `yaml:"clientId"`
-	IdentityExperienceFrameworkObjectId string  `yaml:"identityExperienceFrameworkObjectId"`
-	SamlCertPath                        *string `yaml:"samlCertPath,omitempty"`
-	SamlCert                            []byte
-	Settings                            map[string]interface{} `yaml:"settings"`
+	Name                                   string                 `yaml:"name"`
+	IsProduction                           bool                   `yaml:"isProduction"`
+	Tenant                                 string                 `yaml:"tenant"`
+	TenantId                               string                 `yaml:"tenantId"`
+	ClientId                               string                 `yaml:"clientId"`
+	IdentityExperienceFrameworkAppObjectId *string                `yaml:"identityExperienceFrameworkAppObjectId,omitempty"`
+	Saml                                   *EnvironmentSaml       `yaml:"saml,omitempty"`
+	Settings                               map[string]interface{} `yaml:"settings"`
 }
 
 func (env Environment) Build(s string, d string) error {
@@ -50,6 +65,10 @@ func (env Environment) Build(s string, d string) error {
 				return nil
 			}
 			log.Printf("Compiled %s", t)
+			if env.IsProduction {
+				// @TODO remove debug code
+				log.Print("Removed debug parameters as this is a prod environment.")
+			}
 			ve = os.WriteFile(t, c, os.ModePerm)
 			if ve != nil {
 				errs = append(errs, ve)
@@ -170,7 +189,31 @@ func (env Environment) FixAppRegistrations() error {
 		return err
 	}
 
-	return g.FixAppRegistration(env.IdentityExperienceFrameworkObjectId)
+	if env.IdentityExperienceFrameworkAppObjectId == nil {
+		return fmt.Errorf("please specify identityExperienceFrameworkObjectId in envirnment")
+	}
+	err = g.FixAppRegistration(*env.IdentityExperienceFrameworkAppObjectId, iefApplicationPatch)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if env.Saml != nil && env.Saml.AppObjectId != nil {
+		var p map[string]interface{}
+		err = json.Unmarshal(samlApplicationPatch, &p)
+		if env.Saml.MetadataUrl != nil {
+			p["samlMetadataUrl"] = env.Saml.MetadataUrl
+		}
+		patch, err := json.Marshal(p)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		err = g.FixAppRegistration(*env.Saml.AppObjectId, patch)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
+	return nil
 }
 
 func (env Environment) CreateKeySets() error {
@@ -181,7 +224,7 @@ func (env Environment) CreateKeySets() error {
 
 	es := strings.ReplaceAll(fmt.Sprintf("B2C_SAML_CERT_PW_%s", strings.ToUpper(env.Name)), "-", "_")
 
-	return g.CreateKeySets(env.SamlCert, es)
+	return g.CreateKeySets(env.Saml.Cert, es)
 }
 
 func (env Environment) DeleteKeySets() interface{} {
@@ -238,16 +281,16 @@ func NewEnvironmentsFromConfig(p string, n string) (*Environments, error) {
 	es.filter(n)
 
 	for i, _ := range es.e {
-		if es.e[i].SamlCertPath != nil {
-			sp, err := filepath.Abs(*es.e[i].SamlCertPath)
+		if es.e[i].Saml.CertPath != nil {
+			sp, err := filepath.Abs(*es.e[i].Saml.CertPath)
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("Could not find saml cert %s: %s", *es.e[i].SamlCertPath, err.Error()))
+				return nil, errors.New(fmt.Sprintf("Could not find saml cert %s: %s", *es.e[i].Saml.CertPath, err.Error()))
 			}
 			b, err := os.ReadFile(sp)
 			if err != nil {
 				return nil, errors.New(fmt.Sprintf("Could not read saml cert %s: %s", p, err.Error()))
 			}
-			es.e[i].SamlCert = b
+			es.e[i].Saml.Cert = b
 		}
 	}
 

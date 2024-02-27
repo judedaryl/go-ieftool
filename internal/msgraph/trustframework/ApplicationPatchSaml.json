@@ -1,0 +1,8 @@
+{
+  "api": {
+    "acceptMappedClaims": null,
+    "requestedAccessTokenVersion": 2
+  },
+  "isFallbackPublicClient": null,
+  "optionalClaims": null
+}
