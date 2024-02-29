@@ -13,7 +13,9 @@ import (
 	"regexp"
 	"strings"
 
+	"com.schumann-it.go-ieftool/internal/msgraph"
 	"com.schumann-it.go-ieftool/internal/msgraph/trustframework"
+	"com.schumann-it.go-ieftool/internal/vault"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
@@ -27,19 +29,19 @@ var samlApplicationPatch []byte
 type EnvironmentSaml struct {
 	AppObjectId *string `yaml:"appObjectId,omitempty"`
 	MetadataUrl *string `yaml:"metadataUrl,omitempty"`
-	CertPath    *string `yaml:"certPath,omitempty"`
-	Cert        []byte
 }
 
 type Environment struct {
 	Name                                   string                 `yaml:"name"`
+	AppName                                string                 `yaml:"appName"`
 	IsProduction                           bool                   `yaml:"isProduction"`
 	Tenant                                 string                 `yaml:"tenant"`
 	TenantId                               string                 `yaml:"tenantId"`
-	ClientId                               string                 `yaml:"clientId"`
 	IdentityExperienceFrameworkAppObjectId *string                `yaml:"identityExperienceFrameworkAppObjectId,omitempty"`
 	Saml                                   *EnvironmentSaml       `yaml:"saml,omitempty"`
 	Settings                               map[string]interface{} `yaml:"settings"`
+	Secret                                 *vault.Secret
+	GraphClient                            *msgraph.Client
 }
 
 func (env Environment) Build(s string, d string) error {
@@ -152,47 +154,27 @@ func (env Environment) Deploy(d string) error {
 	}
 	bs := ps.GetBatch()
 
-	g, err := NewGraphClientFromEnvironment(env)
-	if err != nil {
-		return err
-	}
-
 	for i, b := range bs {
 		log.Printf("Processing batch %d", i)
-		g.UploadPolicies(b)
+		env.GraphClient.UploadPolicies(b)
 	}
 
 	return nil
 }
 
 func (env Environment) ListRemotePolicies() ([]string, error) {
-	g, err := NewGraphClientFromEnvironment(env)
-	if err != nil {
-		return nil, err
-	}
-
-	return g.ListPolicies()
+	return env.GraphClient.ListPolicies()
 }
 
 func (env Environment) DeleteRemotePolicies() error {
-	g, err := NewGraphClientFromEnvironment(env)
-	if err != nil {
-		return err
-	}
-
-	return g.DeletePolicies()
+	return env.GraphClient.DeletePolicies()
 }
 
 func (env Environment) FixAppRegistrations() error {
-	g, err := NewGraphClientFromEnvironment(env)
-	if err != nil {
-		return err
-	}
-
 	if env.IdentityExperienceFrameworkAppObjectId == nil {
 		return fmt.Errorf("please specify identityExperienceFrameworkObjectId in envirnment")
 	}
-	err = g.FixAppRegistration(*env.IdentityExperienceFrameworkAppObjectId, iefApplicationPatch)
+	err := env.GraphClient.FixAppRegistration(*env.IdentityExperienceFrameworkAppObjectId, iefApplicationPatch)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -207,7 +189,7 @@ func (env Environment) FixAppRegistrations() error {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		err = g.FixAppRegistration(*env.Saml.AppObjectId, patch)
+		err = env.GraphClient.FixAppRegistration(*env.Saml.AppObjectId, patch)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -217,23 +199,11 @@ func (env Environment) FixAppRegistrations() error {
 }
 
 func (env Environment) CreateKeySets() error {
-	g, err := NewGraphClientFromEnvironment(env)
-	if err != nil {
-		return err
-	}
-
-	es := strings.ReplaceAll(fmt.Sprintf("B2C_SAML_CERT_PW_%s", strings.ToUpper(env.Name)), "-", "_")
-
-	return g.CreateKeySets(env.Saml.Cert, es)
+	return env.GraphClient.CreateKeySets(env.Secret)
 }
 
 func (env Environment) DeleteKeySets() interface{} {
-	g, err := NewGraphClientFromEnvironment(env)
-	if err != nil {
-		return err
-	}
-
-	return g.DeleteKeySets()
+	return env.GraphClient.DeleteKeySets()
 }
 
 type Environments struct {
@@ -280,18 +250,19 @@ func NewEnvironmentsFromConfig(p string, n string) (*Environments, error) {
 	es.e = e
 	es.filter(n)
 
+	vc := vault.NewClient()
 	for i, _ := range es.e {
-		if es.e[i].Saml.CertPath != nil {
-			sp, err := filepath.Abs(*es.e[i].Saml.CertPath)
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("Could not find saml cert %s: %s", *es.e[i].Saml.CertPath, err.Error()))
-			}
-			b, err := os.ReadFile(sp)
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("Could not read saml cert %s: %s", p, err.Error()))
-			}
-			es.e[i].Saml.Cert = b
+		sp := fmt.Sprintf("/azure/applications/b2c/%s/%s", es.e[i].AppName, es.e[i].Name)
+		s, err := vc.Get(sp)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("could not find secret %s: %s", sp, err.Error()))
 		}
+		es.e[i].Secret = s
+		c, err := msgraph.NewClient(es.e[i].TenantId, es.e[i].Secret.ClientId, es.e[i].Secret.ClientSecret)
+		if err != nil {
+			return nil, fmt.Errorf("could not create graph client credentials: %s", err.Error())
+		}
+		es.e[i].GraphClient = c
 	}
 
 	return &es, nil
