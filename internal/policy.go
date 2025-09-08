@@ -35,12 +35,16 @@ func getPolicyDetails(content []byte, filePath string) (*Policy, error) {
 	return policy, nil
 }
 
-func createTree(policies []Policy) tree.Branch[Policy] {
+func createTrees(policies []Policy) []tree.Branch[Policy] {
 	log.Println("Building Policy Tree")
-	rootPolicy := findRootPolicy(&policies)
-	root := tree.NewBranch(rootPolicy)
-	recursiveAddBranch(&root, &policies)
-	return root
+	rootPolicies := findRootPolicies(&policies)
+	trees := []tree.Branch[Policy]{}
+	for _, rootPolicy := range rootPolicies {
+		root := tree.NewBranch(rootPolicy)
+		recursiveAddBranch(&root, &policies)
+		trees = append(trees, root)
+	}
+	return trees
 }
 
 func recursiveAddBranch(parent *tree.Branch[Policy], policies *[]Policy) {
@@ -56,10 +60,10 @@ func recursiveAddBranch(parent *tree.Branch[Policy], policies *[]Policy) {
 }
 
 func CreateBatchedArray(policies []Policy) [][]Policy {
-	root := createTree(policies)
+	roots := createTrees(policies)
 	batch := &[][]Policy{}
 	log.Println("Determining batches")
-	internalCreateBatch([]tree.Branch[Policy]{root}, batch)
+	internalCreateBatch(roots, batch)
 	log.Printf("Found %d batches", len(*batch))
 	return *batch
 }
@@ -77,28 +81,14 @@ func internalCreateBatch(tree []tree.Branch[Policy], policies *[][]Policy) {
 	*policies = append([][]Policy{batch}, *policies...)
 }
 
-func remove[T any](slice []T, s int) []T {
-	if len(slice) == 1 {
-		return []T{}
-	}
-	newArr := []T{}
-	for i := range slice {
-		if i != s {
-			newArr = append(newArr, slice[i])
-		}
-	}
-	return newArr
-}
-
-func findRootPolicy(policies *[]Policy) Policy {
-	var _policy Policy
-	for i, policy := range *policies {
+func findRootPolicies(policies *[]Policy) []Policy {
+	result := []Policy{}
+	for _, policy := range *policies {
 		if policy.ParentPolicyId == "" {
-			_policy = policy
-			*policies = remove(*policies, i)
+			result = append(result, policy)
 		}
 	}
-	return _policy
+	return result
 }
 
 func findChildPolicies(policies *[]Policy, policyId string) []Policy {
