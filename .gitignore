@@ -23,7 +23,7 @@ go.work
 .vscode
 
 
-
+tests/
 # General
 .DS_Store
 .AppleDouble
