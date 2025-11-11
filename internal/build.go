@@ -6,11 +6,21 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
-func Build(configPath string, sourceDir string, relativeDir string, targetDir string) {
+func Build(configPath string, sourceDir string, relativeDir string, targetDir string, ignoreFiles string, ignoredFilesMap map[string]struct{}) {
+
 	entries, err := os.ReadDir(sourceDir)
 	Check(err)
+	if ignoredFilesMap == nil {
+		ignoredFilesMap = make(map[string]struct{})
+		allIgnoredFiles := strings.Split(ignoreFiles, ",")
+		for _, ignoredFile := range allIgnoredFiles {
+			ignoredFilesMap[ignoredFile] = struct{}{}
+		}
+	}
+
 	for _, entry := range entries {
 		info, err := entry.Info()
 		name := info.Name()
@@ -21,6 +31,11 @@ func Build(configPath string, sourceDir string, relativeDir string, targetDir st
 		if !entry.IsDir() {
 			if filepath.Ext(info.Name()) == ".xml" {
 				Check(err)
+				if _, there := ignoredFilesMap[info.Name()]; there {
+					log.Printf("Skipping File %s", info.Name())
+					continue
+				}
+
 				content := replaceVariable(configPath, path)
 				os.MkdirAll(targetFolder, os.ModePerm)
 				log.Printf("Compiled %s", targetPath)
@@ -29,7 +44,7 @@ func Build(configPath string, sourceDir string, relativeDir string, targetDir st
 			}
 		} else {
 			_relativeDir := filepath.Join(relativeDir, name)
-			Build(configPath, path, _relativeDir, targetDir)
+			Build(configPath, path, _relativeDir, targetDir, ignoreFiles, ignoredFilesMap)
 		}
 	}
 }

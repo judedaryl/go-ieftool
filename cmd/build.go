@@ -12,7 +12,7 @@ import (
 )
 
 var build = &cobra.Command{
-	Use:   "build [path to source code] [path to target directory]",
+	Use:   "build [path to source code] [path to target directory] [files to ignore]",
 	Short: "Build source policies and replacing variables.",
 	Long:  `Build source policies and replacing template variables with their corresponding values.`,
 	Args:  cobra.MinimumNArgs(2),
@@ -29,7 +29,11 @@ var build = &cobra.Command{
 		yml := make(map[string]interface{})
 		err = yaml.Unmarshal(config, yml)
 		internal.Check(err)
-		internal.Build(configurationPath, args[0], "", args[1])
+		var ignoredFiles string
+		if len(args) >= 3 {
+			ignoredFiles = args[2]
+		}
+		internal.Build(configurationPath, args[0], "", args[1], ignoredFiles, nil)
 	},
 }
 
